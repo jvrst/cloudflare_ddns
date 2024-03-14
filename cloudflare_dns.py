@@ -4,6 +4,12 @@ import json
 import urllib.parse
 from dataclasses import dataclass
 from typing import List
+import logging
+
+logging.basicConfig(filename='logs/updates.log',
+                    encoding='utf-8',
+                    level=logging.INFO
+                    )
 
 with open('config.json', 'r') as config_file:
     config = json.load(config_file)
@@ -30,7 +36,6 @@ def get_external_ip():
 
 
 def update_dns_record(zone_id, name, dns_record_id, ip, proxied=False):
-    # 'X-Auth-Email': EMAIL,
     headers = {
         'Authorization': f'Bearer {API_KEY}',
         'Content-Type': 'application/json',
@@ -45,9 +50,12 @@ def update_dns_record(zone_id, name, dns_record_id, ip, proxied=False):
 
     connection = http.client.HTTPSConnection("api.cloudflare.com")
     connection.request(
-        "PUT", f"/client/v4/zones/{zone_id}/dns_records/{dns_record_id}", body, headers)
+        "PUT", f"/client/v4/zones/{zone_id}/dns_records/{dns_record_id}",
+        body,
+        headers
+    )
     response = connection.getresponse()
-    return response.read().decode()
+    return response.status, response.read().decode()
 
 
 def send_notification(message: str):
@@ -63,14 +71,20 @@ def send_notification(message: str):
 
 def update_all_records(sites: List[CloudflareDNS], ip):
     for site in sites:
-        result = update_dns_record(
+        status_code, result_body = update_dns_record(
             zone_id=site.zone_id,
             name=site.name,
             dns_record_id=site.dns_record_id,
             ip=ip,
             proxied=site.proxied
         )
-        print(f"Updated {site.name} DNS record:", result)
+
+        msg = f"External IP changed, updating CF DNS: {site.name}"
+        if status_code != 200:
+            msg = f"Error updating {site.name} DNS record: {result_body}"
+            logging.error(msg)
+
+        send_notification(msg)
 
 
 def parse_projects():
@@ -85,6 +99,7 @@ def parse_projects():
         sites.append(site)
     return sites
 
+
 def main():
     external_ip = get_external_ip()
     conn = sqlite3.connect('cloudflare.db')
@@ -97,13 +112,10 @@ def main():
         c.execute('INSERT INTO external_ip (ip) VALUES (?)', (external_ip,))
         conn.commit()
 
-        msg = "External IP changed, updating Cloudflare DNS settings"
-        send_notification(msg)
-
         parsed_projects = parse_projects()
         update_all_records(parsed_projects, external_ip)
     else:
-        print("IP address has not changed, skipping update")
+        logging.info("IP address has not changed, skipping update")
 
     conn.close()
 
