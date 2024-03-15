@@ -5,13 +5,20 @@ import urllib.parse
 from dataclasses import dataclass
 from typing import List
 import logging
+import os.path
 
-logging.basicConfig(filename='logs/updates.log',
-                    encoding='utf-8',
-                    level=logging.INFO
+SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
+LOG_PATH = SCRIPT_PATH + '/logs/cloudflare_updates.log'
+CONFIG_PATH = SCRIPT_PATH + '/config.json'
+DB_PATH = SCRIPT_PATH + '/cloudflare.db'
+
+logging.basicConfig(filename=LOG_PATH,
+                    format='%(asctime)s:%(levelname)s:%(name)s:%(message)s',
+                    level=logging.INFO,
+                    datefmt='%s'
                     )
 
-with open('config.json', 'r') as config_file:
+with open(CONFIG_PATH, 'r') as config_file:
     config = json.load(config_file)
     API_KEY = config["CLOUDFLARE_API_KEY"]
     EMAIL = config["CLOUDFLARE_EMAIL"]
@@ -102,7 +109,7 @@ def parse_projects():
 
 def main():
     external_ip = get_external_ip()
-    conn = sqlite3.connect('cloudflare.db')
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute(
         'CREATE TABLE IF NOT EXISTS external_ip (ip TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)')
