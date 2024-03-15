@@ -66,6 +66,8 @@ def update_dns_record(zone_id, name, dns_record_id, ip, proxied=False):
 
 
 def send_notification(message: str):
+    if not NTFY_HOST or not NTFY_PATH:
+        return
     body = urllib.parse.urlencode({'message': message}).encode('utf-8')
     headers = {
         'Content-type': 'application/x-www-form-urlencoded'
