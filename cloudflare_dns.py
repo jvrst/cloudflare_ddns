@@ -8,7 +8,7 @@ import logging
 import os.path
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
-LOG_PATH = SCRIPT_PATH + '/logs/cloudflare_updates.log'
+LOG_PATH = SCRIPT_PATH + '/logs/updates.log'
 CONFIG_PATH = SCRIPT_PATH + '/config.json'
 DB_PATH = SCRIPT_PATH + '/cloudflare.db'
 
