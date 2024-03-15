@@ -24,6 +24,7 @@ with open(CONFIG_PATH, 'r') as config_file:
     EMAIL = config["CLOUDFLARE_EMAIL"]
     NTFY_HOST = config["NTFY_HOST"]
     NTFY_PATH = config["NTFY_PATH"]
+    NTFY_PASSWORD = config["NTFY_PASSWORD"]
     PROJECTS = config["PROJECTS"]
 
 
@@ -66,15 +67,18 @@ def update_dns_record(zone_id, name, dns_record_id, ip, proxied=False):
 
 
 def send_notification(message: str):
-    if not NTFY_HOST or not NTFY_PATH:
+    if not any([NTFY_HOST, NTFY_PATH, NTFY_PASSWORD]):
+        logging.warning("No notification settings found, skipping")
         return
     body = urllib.parse.urlencode({'message': message}).encode('utf-8')
     headers = {
-        'Content-type': 'application/x-www-form-urlencoded'
+        'Content-type': 'application/x-www-form-urlencoded',
+        'Authorization': f'Bearer {NTFY_PASSWORD}'
     }
     connection = http.client.HTTPSConnection(NTFY_HOST)
     connection.request("POST", f"/{NTFY_PATH}", body, headers)
     response = connection.getresponse()
+    print(response.read().decode())
     return response.read().decode()
 
 
@@ -130,4 +134,5 @@ def main():
 
 
 if __name__ == "__main__":
+    send_notification("testing")
     main()
