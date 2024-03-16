@@ -96,7 +96,7 @@ def update_all_records(sites: List[CloudflareDNS], ip):
         if status_code != 200:
             msg = f"Error updating {site.name} DNS record: {result_body}"
             logging.error(msg)
-
+        logging.info(msg)
         send_notification(msg)
 
 

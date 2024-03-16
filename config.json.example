@@ -1,0 +1,16 @@
+{
+  "CLOUDFLARE_API_KEY": "CF_API_KEY",
+  "CLOUDFLARE_EMAIL": "CF_EMAIL",
+  "NTFY_HOST": "ntfy.selfhosted.com",
+  "NTFY_PATH": "cloudflare_dns",
+  "NTFY_PASSWORD": "https://docs.ntfy.sh/publish/",
+  "PROJECTS": [
+    {
+      "zone_id": "abc123",
+      "dns_record_id": "abc123",
+      "proxied": true,
+      "name": "yourdomain.com"
+    }
+  ]
+}
+
