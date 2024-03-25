@@ -1,9 +1,10 @@
+# Only stdlib is used, no external dependencies. No venv stuff necessary
 import http.client
 import sqlite3
 import json
 import urllib.parse
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional, Tuple
 import logging
 import os.path
 
@@ -36,14 +37,17 @@ class CloudflareDNS():
     proxied: bool = False
 
 
-def get_external_ip():
+def get_external_ip() -> Optional[str]:
     conn = http.client.HTTPConnection("ifconfig.me")
     conn.request("GET", "/ip")
     response = conn.getresponse()
+    if response.status != 200:
+        logging.error("Error getting external IP")
+        return None
     return response.read().decode()
 
 
-def update_dns_record(zone_id, name, dns_record_id, ip, proxied=False):
+def update_dns_record(zone_id, name, dns_record_id, ip, proxied=False) -> Tuple[int, str]:
     headers = {
         'Authorization': f'Bearer {API_KEY}',
         'Content-Type': 'application/json',
@@ -66,7 +70,7 @@ def update_dns_record(zone_id, name, dns_record_id, ip, proxied=False):
     return response.status, response.read().decode()
 
 
-def send_notification(message: str):
+def send_notification(message: str) -> Optional[str]:
     if not any([NTFY_HOST, NTFY_PATH, NTFY_PASSWORD]):
         logging.warning("No notification settings found, skipping")
         return
@@ -78,11 +82,13 @@ def send_notification(message: str):
     connection = http.client.HTTPSConnection(NTFY_HOST)
     connection.request("POST", f"/{NTFY_PATH}", body, headers)
     response = connection.getresponse()
-    print(response.read().decode())
+    if response.status != 200:
+        logging.error("Error sending notification")
+        return None
     return response.read().decode()
 
 
-def update_all_records(sites: List[CloudflareDNS], ip):
+def update_all_records(sites: List[CloudflareDNS], ip) -> None:
     for site in sites:
         status_code, result_body = update_dns_record(
             zone_id=site.zone_id,
@@ -100,7 +106,7 @@ def update_all_records(sites: List[CloudflareDNS], ip):
         send_notification(msg)
 
 
-def parse_projects():
+def parse_projects() -> List[CloudflareDNS]:
     sites = []
     for project in PROJECTS:
         site = CloudflareDNS(
