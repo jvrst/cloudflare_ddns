@@ -74,7 +74,7 @@ def send_notification(message: str) -> Optional[str]:
     if not any([NTFY_HOST, NTFY_PATH, NTFY_PASSWORD]):
         logging.warning("No notification settings found, skipping")
         return
-    body = urllib.parse.urlencode({'message': message}).encode('utf-8')
+    body = message.encode('utf-8')
     headers = {
         'Content-type': 'application/x-www-form-urlencoded',
         'Authorization': f'Bearer {NTFY_PASSWORD}'
