@@ -121,13 +121,16 @@ def parse_projects() -> List[CloudflareDNS]:
 
 def main():
     external_ip = get_external_ip()
+    if external_ip is None:
+        logging.info("IP address could not be retrieved, skipping update")
+        exit(1)
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute(
         'CREATE TABLE IF NOT EXISTS external_ip (ip TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)')
 
-    res = c.execute('SELECT * FROM external_ip ORDER BY ROWID DESC').fetchone()
-    if res is None or res[0] != external_ip:
+    current_ip = c.execute('SELECT * FROM external_ip ORDER BY ROWID DESC').fetchone()
+    if current_ip is None or current_ip[0] != external_ip:
         c.execute('INSERT INTO external_ip (ip) VALUES (?)', (external_ip,))
         conn.commit()
 
